@@ -8,9 +8,9 @@
 #include <fcntl.h>
 #include <errno.h>
 
-void menu(int *opcao) {
-    int success;
-	char *endptr, buf[1024], dest[4];
+void menu(long *opcao) {
+    int success = 0;
+	char *endptr, buf[1024];
 	
 	do {
         printf("----------------------------------------------------------\n"
@@ -19,7 +19,7 @@ void menu(int *opcao) {
                "   --0                Leave                               \n"
                "   --s                Show                                \n"
                "   --cp               Copy                                \n"
-               "   --ac               Append                              \n"
+               "   --ap               Append                              \n"
                "   --ct               Count                               \n"
                "   --d                Delete                              \n"
                "   --i                Info                                \n"
@@ -32,44 +32,74 @@ void menu(int *opcao) {
 		}
 
 		errno = 0; // reset error number
-		// (*opcao) = strtol(buf, &endptr, 10);
 		if (errno == ERANGE) {
+			success = 0;
 			printf("The number entered is either too large or too small.\n\n");
-			success = 0;
+			setvbuf(stdout, NULL, _IONBF, 0);
 			sleep(3);
 		}
-		else if (!(buf[0] == '-' && buf[1] == '-' && 
-		   (buf[2] == '0' || buf[2] == 's' || buf[2] == 'd' || buf[2] == 'i' || buf[2] == 'l' || 
-		   (buf[2] == 'c' && buf[3] == 'p') || (buf[2] == 'a' && buf[3] == 'c') || (buf[2] == 'c' && buf[3] == 't')))) 
+		else if (!(buf[0] == '-' && buf[1] == '-' ))
 		{
-			printf("'%c%c%c' is not recognised as a permited option",buf[0],buf[1],buf[2]);
-			printf("Please enter one of the permited options");
+			success = 0;
+			buf[strcspn(buf, "\n")] = 0;
+			printf("'%s' is not recognised as a permited option\n",buf);
+			printf("Please enter a correct one!\n\n");
+			setvbuf(stdout, NULL, _IONBF, 0);
 			sleep(3);
 		}
-		else if (endptr == buf)	{
-			// no character was read.
-			success = 0;
+		else if (buf[2] == '0' && buf[3] == '\n'){
+			success = 1;
+			*opcao = 0;
 		}
-		else if ((*endptr) && (*endptr != '\n')) {
-			// *endptr is neither end of string nor newline, so we didn't convert the *whole* input.
-			success = 0;
+		else if (buf[2] == 's' && buf[3] == '\n'){
+			success = 1;
+			*opcao = 1;
+		}
+		else if (buf[2] == 'c' && buf[3] == 'p' && buf[4] == '\n'){
+			success = 1;
+			*opcao = 2;
+		}
+		else if (buf[2] == 'a' && buf[3] == 'p' && buf[4] == '\n'){
+			success = 1;
+			*opcao = 3;
+		}
+		else if (buf[2] == 'c' && buf[3] == 't' && buf[4] == '\n'){
+			success = 1;
+			*opcao = 4;
+		}
+		else if (buf[2] == 'd' && buf[3] == '\n'){
+			success = 1;
+			*opcao = 5;
+		}
+		else if (buf[2] == 'i' && buf[3] == '\n'){
+			success = 1;
+			*opcao = 6;
+		}
+		else if (buf[2] == 'l' && buf[3] == '\n'){
+			success = 1;
+			*opcao = 7;
 		}
 		else {
-			success = 1;
+			success = 0;
+			buf[strcspn(buf, "\n")] = 0;
+			printf("'%s' is not recognised as a permited option\n",buf);
+			printf("Please enter a correct one!\n\n");
+			setvbuf(stdout, NULL, _IONBF, 0);
+			sleep(3);
 		}
 	}while(!success);
 }
 //#####################################################################################################
 //#####################################################################################################
 int main(int argc, char const *argv[]) {
-    int opcao;
+    long opcao;
 
     do {
         menu(&opcao);
 
         switch(opcao) {
-            // case 0: printf("Goodbye!!\n\n");
-			// 		break;
+            case 0: printf("Goodbye!!\n\n");
+					break;
             // case 1: Mostrar();
 			// 		break;
             // case 2: Copiar();
@@ -87,7 +117,5 @@ int main(int argc, char const *argv[]) {
         }
     }while(opcao != 0);
 
-    printf("Hello");
-    printf("\n");
     return 0;
 }

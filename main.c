@@ -33,7 +33,7 @@ void mostrar() {
 
 	getchar();
 	
-	// close(file);
+	close(file);
 }
 
 
@@ -146,6 +146,13 @@ int main(int argc, char const *argv[]) {
             // case 7: listar();
             // 		break;
         }
+
+		/**
+		 * para mudar este menu não lhe mexam muito
+		 * talvez o acrescente em cima pra diminuir tamanho
+		 *  
+		 * 
+		 */
     }while(opcao != 0);
 
     return 0;

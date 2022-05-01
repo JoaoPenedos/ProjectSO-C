@@ -14,37 +14,43 @@
 
 extern int errno;
 
-void show() {
-	char ch, fileName[256];
-	int i;
+void help() {
+	printf("\e[1;1H\e[2J");
+	printf("----------------------------------------------------------\n"
+			"   HELP menu:                                             \n"
+			"                                                          \n"
+			"   --0                Leave                               \n"
+			"   --s                Show                                \n"
+			"   --cp               Copy                                \n"
+			"   --ap               Append                              \n"
+			"   --ct               Count                               \n"
+			"   --d                Delete                              \n"
+			"   --i                Info                                \n"
+			"   --l                List                                \n"
+			"----------------------------------------------------------\n");
+}
 
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro que pertende visualizar?\n",51);
-	read(STDIN_FILENO, fileName, sizeof(fileName));
-	fileName[strcspn(fileName, "\n")] = '\0';
-
+void show(const char *fileName) {
+	char ch;
 	int file = open(fileName,O_RDONLY,0);
 	  
     if (file < 0) { 
         // print which type of error have in a code 
         printf("Error Number %d\n", errno);
         // print program detail "Success or failure" 
-        perror("Program");
-		getchar();              
+        perror("Program"); 
     }
 	else {
-		printf("\e[1;1H\e[2J");
-		printf("\nConteudo no ficheiro %s\n",fileName);
+		printf("\nConteudo no ficheiro %s: \n\n",fileName);
 		while (read(file, &ch, sizeof(char)) != 0) {
 			printf("%c", ch);
 		}
 		close(file);
 		printf("\n\n");
-		getchar();
 	}
 }
 
-void strip_ext(char *fname)
-{
+void strip_ext(char *fname) {
     char *end = fname + strlen(fname);
 
     while (end > fname && *end != '.') {
@@ -56,15 +62,11 @@ void strip_ext(char *fname)
     }
 }
 
-int copy() {
-	char fileName[256], fileNameCP[256], buf[4096];
+int copy(const char *fileName) {
+	char fileNameCP[256], buf[4096];
 	int fileOrigin, fileCopy, saved_errno;
 	ssize_t nread;
 
-	// printf("Qual e o nome do ficheiro que pertende criar uma copia?\n");
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro que pertende criar uma copia?\n",56);
-	read(STDIN_FILENO, fileName, sizeof(fileName));
-	fileName[strcspn(fileName, "\n")] = '\0';
 	strcpy(fileNameCP,fileName);
 	strip_ext(fileNameCP);
 
@@ -72,7 +74,6 @@ int copy() {
 	if (fileOrigin < 0) {
         printf("Error Number %d\n", errno);
         perror("Program");
-		getchar(); 
 		return -1;
 	}
 
@@ -111,7 +112,6 @@ int copy() {
 	saved_errno = errno;
 	printf("Error Number %d\n", saved_errno);
 	perror("Program");
-	getchar(); 
 
 	close(fileOrigin);
 	if (fileCopy >= 0)
@@ -121,23 +121,15 @@ int copy() {
 	return -1;
 }
 
-int append() {
-	char fileNameO[256], fileNameD[256], buf[4096];
+int append(const char *fileNameO,const char *fileNameD) {
+	char buf[4096];
 	int fileOrigin, fileDestiny, saved_errno;
 	ssize_t nread;
-
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro, origem?\n",35);
-	read(STDIN_FILENO, fileNameO, sizeof(fileNameO));
-	fileNameO[strcspn(fileNameO, "\n")] = '\0';
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro, destino?\n",36);
-	read(STDIN_FILENO, fileNameD, sizeof(fileNameD));
-	fileNameD[strcspn(fileNameD, "\n")] = '\0';
 
 	fileOrigin = open(fileNameO, O_RDONLY);
 	if (fileOrigin < 0) {
         printf("Error Number %d\n", errno);
         perror("Program");
-		getchar(); 
 		return -1;
 	}
 
@@ -176,7 +168,6 @@ int append() {
 	saved_errno = errno;
 	printf("Error Number %d\n", saved_errno);
 	perror("Program");
-	getchar(); 
 
 	close(fileOrigin);
 	if (fileDestiny >= 0)
@@ -186,20 +177,15 @@ int append() {
 	return -1;
 }
 
-void count() {
+void count(const char *fileName) {
 	size_t lines = 1;
-	char c, fileName[256];
+	char c;
 	int i;
-
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro que pertende visualizar?\n",51);
-	read(STDIN_FILENO, fileName, sizeof(fileName));
-	fileName[strcspn(fileName, "\n")] = '\0';
 
 	int file = open(fileName,O_RDONLY,0);
 	if (file < 0) {
         printf("Error Number %d\n", errno);
         perror("Program");
-		getchar(); 
 	}
 	else {
 		while (read(file, &c, 1) == 1) {
@@ -209,56 +195,36 @@ void count() {
 		}
 
 		printf("Linecount: %zu\n", lines);
-		getchar();
 	}
 }
 
-void delete() {
+void delete(const char *fileName) {
 	struct stat sb;
-	char fileName[256];
     int fd;
-
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro que pertende visualizar?\n",51);
-	read(STDIN_FILENO, fileName, sizeof(fileName));
-	fileName[strcspn(fileName, "\n")] = '\0';
 
 	if (!stat(fileName, &sb))
 	{
 		if (S_ISDIR(sb.st_mode)){
-			printf("Pasta %s foi removido com sucesso", fileName);
+			printf("Pasta %s foi removido com sucesso\n", fileName);
 			rmdir(fileName);
-			getchar(); 
 		}
 		else {
-			printf("Ficheiro %s foi removido com sucesso", fileName);
+			printf("Ficheiro %s foi removido com sucesso\n", fileName);
 			unlink(fileName);
-			getchar(); 
 		}
 	}
 	else {
 		printf("Error Number %d\n", errno);
         perror("Program");
-		getchar(); 
 	}
 }
 
-void info() {
+void info(const char *fileName) {
     struct stat sb;
-	char fileName[256];
-
-	write(STDOUT_FILENO,"Qual e o nome do ficheiro que pertende visualizar?\n",51);
-	read(STDIN_FILENO, fileName, sizeof(fileName));
-	fileName[strcspn(fileName, "\n")] = '\0';
-
-	// if (argc != 2) {
-	// 	fprintf(stderr, "Usage: %s <pathname>\n", argv[0]);
-	// 	exit(EXIT_FAILURE);
-	// }
 
 	if (stat(fileName, &sb) < 0) {
 		printf("Error Number %d\n", errno);
 		perror("stat");
-		getchar();
 	}
 	else {
 		printf("File type:                ");
@@ -286,33 +252,14 @@ void info() {
 		printf("Last status change:       %s", ctime(&sb.st_ctime));
 		printf("Last file access:         %s", ctime(&sb.st_atime));
 		printf("Last file modification:   %s", ctime(&sb.st_mtime));
-
-		getchar();
 	}
-	// exit(EXIT_SUCCESS);
 }
 
-void list() {
+void list(const char *dirName) {
 	DIR *d;
 	struct dirent *dir;
-	char dirName[256], yn[10];
-	
-	do {
-		write(STDOUT_FILENO,"Diretoria atual ou especifica? [Aa-Ee]\n",strlen("Diretoria atual ou especifica? [Aa-Ee]\n"));
-		read(STDIN_FILENO, yn, 10);
-		yn[strcspn(yn, "\n")] = '\0';
-	} while((yn[0] != 'A' ) && (yn[0] != 'a') && (yn[0] != 'E') && (yn[0] != 'e'));
 
-	if((yn[0] == 'A') || (yn[0] == 'a')) {
-		d = opendir(".");
-	}
-	else {
-		write(STDOUT_FILENO,"Qual e o nome da diretoria que quer listar?\n",strlen("Qual e o nome da diretoria que quer listar?\n"));
-		read(STDIN_FILENO, dirName, sizeof(dirName));
-		dirName[strcspn(dirName, "\n")] = '\0';
-		d = opendir(dirName);
-	}
-
+	d = opendir(dirName);
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			if (dir->d_type == DT_REG) {
@@ -322,123 +269,99 @@ void list() {
 				printf("Directory:		 %s\n", dir->d_name);
 			}
 		}
-		closedir(d);
-		getchar();
 	}
 	else {
 		printf("Error Number %d\n", errno);
-		perror("stat");
-		getchar();		
+		perror("stat");	
 	}
+	closedir(d);
 }
 
-int menu() {
-	char *endptr, buf[1024];
+//#####################################################################################################
+//#####################################################################################################
+int main(int argc, char const **argv) {
 	int err;
-	
-	printf("\e[1;1H\e[2J");
-	printf("----------------------------------------------------------\n"
-			"   HELP menu:                                             \n"
-			"                                                          \n"
-			"   --0                Leave                               \n"
-			"   --s                Show                                \n"
-			"   --cp               Copy                                \n"
-			"   --ap               Append                              \n"
-			"   --ct               Count                               \n"
-			"   --d                Delete                              \n"
-			"   --i                Info                                \n"
-			"   --l                List                                \n"
-			"----------------------------------------------------------\nOption: \n");
-	
-	if (!read(STDIN_FILENO, buf, sizeof(buf))) 
-		return 0;
 
-	errno = 0; // reset error number
-	if (errno == ERANGE) {
-		printf("The number entered is either too large or too small.\n\n");
-		getchar();
-
-		return 1;
+	if (strcmp(argv[1],"--h")==0) {
+		if(argc == 2)
+			help();
+		else {
+			printf("'%s' is only needed alone\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");			
+		}
 	}
-	else if (!(buf[0] == '-' && buf[1] == '-' )) {
-		printf("\e[1;1H\e[2J");
-		buf[strcspn(buf, "\n")] = 0;
-		printf("'%s' is not recognised as a permited option\n",buf);
-		printf("Please enter a correct one!\n\n");
-		// setvbuf(stdout, NULL, _IONBF, 0);
-		// sleep(2);
-		getchar();
-
-		return 1;
+	else if (strcmp(argv[1],"--s")==0) {
+		if(argc == 3)
+			show(argv[2]);
+		else {
+			printf("'%s' needs a file name specified in parameter (ex: --s file.txt)\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
+		}
 	}
-	else if (buf[2] == '0' && buf[3] == '\n') {
-        printf("Goodbye!!\n\n");
-		return 0;
-	}
-	else if (buf[2] == 's' && buf[3] == '\n') {
-		show();
-		return 1;
-	}
-	else if (buf[2] == 'c' && buf[3] == 'p' && buf[4] == '\n') {
-		err = copy();
-		if(err == 0){
-			write(STDOUT_FILENO,"Ficheiro copia criado e preenchido com sucesso\n",47);
-			getchar();
-			return 1;
+	else if (strcmp(argv[1],"--cp")==0) {
+		if(argc == 3) {
+			err = copy(argv[2]);
+			if(err == 0)
+				write(STDOUT_FILENO,"Ficheiro copia criado e preenchido com sucesso\n",47);
+			else 
+				write(STDOUT_FILENO,"Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n",60);
 		}
 		else {
-			write(STDOUT_FILENO,"Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n",60);
-		getchar();
-			return 1;
+			printf("'%s' needs a file name specified in parameter (ex: --cp file.txt)\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
 		}
 	}
-	else if (buf[2] == 'a' && buf[3] == 'p' && buf[4] == '\n') {
-		err = append();
-		if(err == 0){
-			write(STDOUT_FILENO,"Conteudo do ficheiro acrescentado com sucesso\n",46);
-			getchar();
-			return 1;
+	else if (strcmp(argv[1],"--ap")==0) {
+		if(argc == 4) {
+			err = append(argv[2],argv[3]);
+			if(err == 0)
+				write(STDOUT_FILENO,"Conteudo do ficheiro acrescentado com sucesso\n",46);
+			else 
+				write(STDOUT_FILENO,"Nao foi possivel acrescentar o conteudo do ficheiro\n",52);
 		}
 		else {
-			write(STDOUT_FILENO,"Nao foi possivel acrescentar o conteudo do ficheiro\n",52);
-			getchar();
-			return 1;
+			printf("'%s' needs 2 files name specified in parameters (ex: --ap origin.txt destiny.txt)\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
 		}
 	}
-	else if (buf[2] == 'c' && buf[3] == 't' && buf[4] == '\n') {
-		count();
-		return 1;
+	else if (strcmp(argv[1],"--ct")==0) {
+		if(argc == 3)
+			count(argv[2]);
+		else {
+			printf("'%s' needs a file name specified in parameter (ex: --ct file.txt)\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
+		}
 	}
-	else if (buf[2] == 'd' && buf[3] == '\n') {
-		delete();
-		return 1;
+	else if (strcmp(argv[1],"--d")==0) {
+		if(argc == 3)
+			delete(argv[2]);
+		else {
+			printf("'%s' needs a file name specified in parameter (ex: --d file.txt)\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
+		}
 	}
-	else if (buf[2] == 'i' && buf[3] == '\n') {
-		info();
-		return 1;
+	else if (strcmp(argv[1],"--i")==0) {
+		if(argc == 3)
+			info(argv[2]);
+		else {
+			printf("'%s' needs a file/directory name specified in parameter (ex: --i file.txt/dir)\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
+		}
 	}
-	else if (buf[2] == 'l' && buf[3] == '\n') {
-		list();
-		return 1;
+	else if (strcmp(argv[1],"--l")==0) {
+		if(argc == 2)
+			list(".");
+		else if(argc == 3)
+			list(argv[2]);
+		else {
+			printf("'%s' alone for current directory or it needs a directory name specified in parameter(ex: --l [dir])\n",argv[1]);
+			printf("Please enter a correct one! (--h for help menu)\n\n");
+		}
 	}
 	else {
-		printf("\e[1;1H\e[2J");
-		buf[strcspn(buf, "\n")] = 0;
-		printf("'%s' is not recognised as a permited option\n",buf);
-		printf("Please enter a correct one!\n\n");
-		getchar();
-
-		return 1;
+		printf("'%s' is not recognised as a permited option\n",argv[1]);
+		printf("Please enter a correct one! (--h for help menu)\n\n");
 	}
-}
-//#####################################################################################################
-//#####################################################################################################
-int main(int argc, char const *argv[]) {
-    int opcao;
-
-    do {
-        opcao = menu();
-    }while(opcao != 0);
 
     return 0;
 }

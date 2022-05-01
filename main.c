@@ -16,18 +16,17 @@ extern int errno;
 
 void help() {
 	printf("\e[1;1H\e[2J");
-	printf("----------------------------------------------------------\n"
-			"   HELP menu:                                             \n"
-			"                                                          \n"
-			"   --0                Leave                               \n"
-			"   --s                Show                                \n"
-			"   --cp               Copy                                \n"
-			"   --ap               Append                              \n"
-			"   --ct               Count                               \n"
-			"   --d                Delete                              \n"
-			"   --i                Info                                \n"
-			"   --l                List                                \n"
-			"----------------------------------------------------------\n");
+	printf("------------------------------------------------------------------------------------\n"
+			"   HELP menu:\n\n"
+			"   --h          Help - shows a help menu\n"
+			"   --s          Show - takes 1 file as argument and writes the content of the file in the console\n"
+			"   --cp         Copy - takes 1 file as argument and creat a copy of that file with the name fileName_copia.txt\n"
+			"   --ap         Append - takes 2 files as argument and appends the content of the first to the second\n"
+			"   --ct         Count - takes 1 file as argument and count it's lines\n"
+			"   --d          Delete - takes 1 file/dir as argument and deletes\n"
+			"   --i          Info - takes 1 file/dir as argument and show the system info about them\n"
+			"   --l          List - takes 1 dir as argument or none and list the content of that dir, if none where taken as argument list the current directory\n"
+			"------------------------------------------------------------------------------------\n");
 }
 
 void show(const char *fileName) {

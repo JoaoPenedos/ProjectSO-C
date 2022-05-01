@@ -41,7 +41,7 @@ void show(const char *fileName) {
         perror("Program"); 
     }
 	else {
-		printf("\nConteudo no ficheiro %s: \n\n",fileName);
+		printf("\nFile content %s: \n\n",fileName);
 		while (read(file, &ch, sizeof(char)) != 0) {
 			printf("%c", ch);
 		}
@@ -205,11 +205,11 @@ void delete(const char *fileName) {
 	if (!stat(fileName, &sb))
 	{
 		if (S_ISDIR(sb.st_mode)){
-			printf("Pasta %s foi removido com sucesso\n", fileName);
+			printf("Directory %s was removed with success\n", fileName);
 			rmdir(fileName);
 		}
 		else {
-			printf("Ficheiro %s foi removido com sucesso\n", fileName);
+			printf("File %s was removed with success\n", fileName);
 			unlink(fileName);
 		}
 	}
@@ -282,86 +282,94 @@ void list(const char *dirName) {
 int main(int argc, char const **argv) {
 	int err;
 
-	if (strcmp(argv[1],"--h")==0) {
-		if(argc == 2)
-			help();
-		else {
-			printf("'%s' is only needed alone\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");			
+	if(argc > 1) {
+		if (strcmp(argv[1],"--h")==0) {
+			if(argc == 2)
+				help();
+			else {
+				printf("'%s' is only needed alone\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");			
+			}
 		}
-	}
-	else if (strcmp(argv[1],"--s")==0) {
-		if(argc == 3)
-			show(argv[2]);
+		else if (strcmp(argv[1],"--s")==0) {
+			if(argc == 3)
+				show(argv[2]);
+			else {
+				printf("'%s' needs a file name specified in parameter (ex: --s file.txt)\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
+		else if (strcmp(argv[1],"--cp")==0) {
+			if(argc == 3) {
+				err = copy(argv[2]);
+				if(err == 0)
+					write(STDOUT_FILENO,"Ficheiro copia criado e preenchido com sucesso\n",47);
+				else 
+					write(STDOUT_FILENO,"Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n",60);
+			}
+			else {
+				printf("'%s' needs a file name specified in parameter (ex: --cp file.txt)\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
+		else if (strcmp(argv[1],"--ap")==0) {
+			if(argc == 4) {
+				err = append(argv[2],argv[3]);
+				if(err == 0)
+					write(STDOUT_FILENO,"Conteudo do ficheiro acrescentado com sucesso\n",46);
+				else 
+					write(STDOUT_FILENO,"Nao foi possivel acrescentar o conteudo do ficheiro\n",52);
+			}
+			else {
+				printf("'%s' needs 2 files name specified in parameters (ex: --ap origin.txt destiny.txt)\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
+		else if (strcmp(argv[1],"--ct")==0) {
+			if(argc == 3)
+				count(argv[2]);
+			else {
+				printf("'%s' needs a file name specified in parameter (ex: --ct file.txt)\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
+		else if (strcmp(argv[1],"--d")==0) {
+			if(argc == 3)
+				delete(argv[2]);
+			else {
+				printf("'%s' needs a file name specified in parameter (ex: --d file.txt)\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
+		else if (strcmp(argv[1],"--i")==0) {
+			if(argc == 3)
+				info(argv[2]);
+			else {
+				printf("'%s' needs a file/directory name specified in parameter (ex: --i file.txt/dir)\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
+		else if (strcmp(argv[1],"--l")==0) {
+			if(argc == 2)
+				list(".");
+			else if(argc == 3)
+				list(argv[2]);
+			else {
+				printf("'%s' alone for current directory or it needs a directory name specified in parameter (ex: --l [dir])\n",argv[1]);
+				printf("Please enter a correct one! (--h for help menu)\n\n");
+			}
+		}
 		else {
-			printf("'%s' needs a file name specified in parameter (ex: --s file.txt)\n",argv[1]);
+			printf("'%s' is not recognised as a permited option\n",argv[1]);
 			printf("Please enter a correct one! (--h for help menu)\n\n");
 		}
+
+		exit(EXIT_SUCCESS);
 	}
-	else if (strcmp(argv[1],"--cp")==0) {
-		if(argc == 3) {
-			err = copy(argv[2]);
-			if(err == 0)
-				write(STDOUT_FILENO,"Ficheiro copia criado e preenchido com sucesso\n",47);
-			else 
-				write(STDOUT_FILENO,"Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n",60);
-		}
-		else {
-			printf("'%s' needs a file name specified in parameter (ex: --cp file.txt)\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");
-		}
-	}
-	else if (strcmp(argv[1],"--ap")==0) {
-		if(argc == 4) {
-			err = append(argv[2],argv[3]);
-			if(err == 0)
-				write(STDOUT_FILENO,"Conteudo do ficheiro acrescentado com sucesso\n",46);
-			else 
-				write(STDOUT_FILENO,"Nao foi possivel acrescentar o conteudo do ficheiro\n",52);
-		}
-		else {
-			printf("'%s' needs 2 files name specified in parameters (ex: --ap origin.txt destiny.txt)\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");
-		}
-	}
-	else if (strcmp(argv[1],"--ct")==0) {
-		if(argc == 3)
-			count(argv[2]);
-		else {
-			printf("'%s' needs a file name specified in parameter (ex: --ct file.txt)\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");
-		}
-	}
-	else if (strcmp(argv[1],"--d")==0) {
-		if(argc == 3)
-			delete(argv[2]);
-		else {
-			printf("'%s' needs a file name specified in parameter (ex: --d file.txt)\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");
-		}
-	}
-	else if (strcmp(argv[1],"--i")==0) {
-		if(argc == 3)
-			info(argv[2]);
-		else {
-			printf("'%s' needs a file/directory name specified in parameter (ex: --i file.txt/dir)\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");
-		}
-	}
-	else if (strcmp(argv[1],"--l")==0) {
-		if(argc == 2)
-			list(".");
-		else if(argc == 3)
-			list(argv[2]);
-		else {
-			printf("'%s' alone for current directory or it needs a directory name specified in parameter(ex: --l [dir])\n",argv[1]);
-			printf("Please enter a correct one! (--h for help menu)\n\n");
-		}
-	}
-	else {
-		printf("'%s' is not recognised as a permited option\n",argv[1]);
-		printf("Please enter a correct one! (--h for help menu)\n\n");
+	else{
+		printf("For the program to work it needs a option (ex: programName --s [file.txt])\n");
+		printf("Please enter one! (--h for help menu)\n\n");
+		exit(EXIT_FAILURE);
 	}
 
-    return 0;
 }

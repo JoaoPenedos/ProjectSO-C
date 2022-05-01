@@ -29,26 +29,6 @@ void help() {
 			"------------------------------------------------------------------------------------\n");
 }
 
-void show(const char *fileName) {
-	char ch;
-	int file = open(fileName,O_RDONLY,0);
-	  
-    if (file < 0) { 
-        // print which type of error have in a code 
-        printf("Error Number %d\n", errno);
-        // print program detail "Success or failure" 
-        perror("Program"); 
-    }
-	else {
-		printf("\nFile content %s: \n\n",fileName);
-		while (read(file, &ch, sizeof(char)) != 0) {
-			printf("%c", ch);
-		}
-		close(file);
-		printf("\n\n");
-	}
-}
-
 void strip_ext(char *fname) {
     char *end = fname + strlen(fname);
 
@@ -59,6 +39,25 @@ void strip_ext(char *fname) {
     if (end > fname) {
         *end = '\0';
     }
+}
+
+void show(const char *fileName) {
+	char ch;
+	int file = open(fileName,O_RDONLY,0);
+
+	if (file < 0) { 
+		printf("Error Number %d\n", errno);
+		perror("Program"); 
+	}
+	else {
+		printf("\nFile content %s: \n\n",fileName);
+		while (read(file, &ch, sizeof(char)) != 0) {
+			printf("%c", ch);
+		}
+		close(file);
+		printf("\n\n");
+	}	
+
 }
 
 int copy(const char *fileName) {
@@ -201,8 +200,7 @@ void delete(const char *fileName) {
 	struct stat sb;
     int fd;
 
-	if (!stat(fileName, &sb))
-	{
+	if (!stat(fileName, &sb)) {
 		if (S_ISDIR(sb.st_mode)){
 			printf("Directory %s was removed with success\n", fileName);
 			rmdir(fileName);
@@ -302,9 +300,9 @@ int main(int argc, char const **argv) {
 			if(argc == 3) {
 				err = copy(argv[2]);
 				if(err == 0)
-					write(STDOUT_FILENO,"Ficheiro copia criado e preenchido com sucesso\n",47);
+					write(STDOUT_FILENO,"Ficheiro copia criado e preenchido com sucesso\n",strlen("Ficheiro copia criado e preenchido com sucesso\n"));
 				else 
-					write(STDOUT_FILENO,"Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n",60);
+					write(STDOUT_FILENO,"Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n",strlen("Nao foi possivel criar e/ou copiar o conteudo para ficheiro\n"));
 			}
 			else {
 				printf("'%s' needs a file name specified in parameter (ex: --cp file.txt)\n",argv[1]);
@@ -315,9 +313,9 @@ int main(int argc, char const **argv) {
 			if(argc == 4) {
 				err = append(argv[2],argv[3]);
 				if(err == 0)
-					write(STDOUT_FILENO,"Conteudo do ficheiro acrescentado com sucesso\n",46);
+					write(STDOUT_FILENO,"Conteudo do ficheiro acrescentado com sucesso\n",strlen("Conteudo do ficheiro acrescentado com sucesso\n"));
 				else 
-					write(STDOUT_FILENO,"Nao foi possivel acrescentar o conteudo do ficheiro\n",52);
+					write(STDOUT_FILENO,"Nao foi possivel acrescentar o conteudo do ficheiro\n",strlen("Nao foi possivel acrescentar o conteudo do ficheiro\n"));
 			}
 			else {
 				printf("'%s' needs 2 files name specified in parameters (ex: --ap origin.txt destiny.txt)\n",argv[1]);

@@ -5,6 +5,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
@@ -291,6 +292,46 @@ void info() {
 	// exit(EXIT_SUCCESS);
 }
 
+void list() {
+	DIR *d;
+	struct dirent *dir;
+	char dirName[256], yn[10];
+	
+	do {
+		write(STDOUT_FILENO,"Diretoria atual ou especifica? [Aa-Ee]\n",strlen("Diretoria atual ou especifica? [Aa-Ee]\n"));
+		read(STDIN_FILENO, yn, 10);
+		yn[strcspn(yn, "\n")] = '\0';
+	} while((yn[0] != 'A' ) && (yn[0] != 'a') && (yn[0] != 'E') && (yn[0] != 'e'));
+
+	if((yn[0] == 'A') || (yn[0] == 'a')) {
+		d = opendir(".");
+	}
+	else {
+		write(STDOUT_FILENO,"Qual e o nome da diretoria que quer listar?\n",strlen("Qual e o nome da diretoria que quer listar?\n"));
+		read(STDIN_FILENO, dirName, sizeof(dirName));
+		dirName[strcspn(dirName, "\n")] = '\0';
+		d = opendir(dirName);
+	}
+
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if (dir->d_type == DT_REG) {
+				printf("File:			 %s\n", dir->d_name);
+			}
+			else if (dir->d_type == DT_DIR) {
+				printf("Directory:		 %s\n", dir->d_name);
+			}
+		}
+		closedir(d);
+		getchar();
+	}
+	else {
+		printf("Error Number %d\n", errno);
+		perror("stat");
+		getchar();		
+	}
+}
+
 int menu() {
 	char *endptr, buf[1024];
 	int err;
@@ -376,10 +417,10 @@ int menu() {
 		info();
 		return 1;
 	}
-	// else if (buf[2] == 'l' && buf[3] == '\n') {
-	// 	list();
-	// 	return 1;
-	// }
+	else if (buf[2] == 'l' && buf[3] == '\n') {
+		list();
+		return 1;
+	}
 	else {
 		printf("\e[1;1H\e[2J");
 		buf[strcspn(buf, "\n")] = 0;

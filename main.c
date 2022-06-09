@@ -16,7 +16,7 @@ extern int errno;
 
 void help() {
 	printf("\e[1;1H\e[2J");
-	printf("------------------------------------------------------------------------------------\n"
+	printf("----------------------------------------------------------------------------\n"
 			"   HELP menu:\n\n"
 			"   --h          Help - shows a help menu\n"
 			"   --s          Show - takes 1 file as argument and writes the content of the file in the console\n"
@@ -26,7 +26,7 @@ void help() {
 			"   --d          Delete - takes 1 file/dir as argument and deletes\n"
 			"   --i          Info - takes 1 file/dir as argument and show the system info about them\n"
 			"   --l          List - takes 1 dir as argument or none and list the content of that dir, if none where taken as argument list the current directory\n"
-			"------------------------------------------------------------------------------------\n");
+			"----------------------------------------------------------------------------\n");
 }
 
 void strip_ext(char *fname) {
@@ -41,169 +41,225 @@ void strip_ext(char *fname) {
     }
 }
 
+int isRegularFile(const char *path) {
+    struct stat path_stat;
+    stat(path, &path_stat);
+    return S_ISREG(path_stat.st_mode);
+}
+
+int isDirectoryEmpty(const char *dirname) {
+    int n = 0;
+    struct dirent *d;
+    DIR *dir = opendir(dirname);
+    while ((d = readdir(dir)) != NULL) {
+        if(++n > 2)
+        break;
+    }
+    closedir(dir);
+    if (n <= 2) //Directory Empty
+        return 1;
+    else
+        return 0;
+}
+
 void show(const char *fileName) {
 	char ch;
-	int file = open(fileName,O_RDONLY,0);
+	int check = isRegularFile(fileName);
 
-	if (file < 0) { 
+    if(check == 1) {
+		int file = open(fileName,O_RDONLY,0);
+
+		if (file < 0) { 
+			printf("Error Number %d\n", errno);
+			perror("Program"); 
+		}
+		else {
+			printf("\nFile content %s: \n\n",fileName);
+			while (read(file, &ch, sizeof(char)) != 0) {
+				printf("%c", ch);
+			}
+			close(file);
+			printf("\n\n");
+		}
+    }
+	else {
 		printf("Error Number %d\n", errno);
+		printf("Argument %s is not a regular file\n", fileName);
 		perror("Program"); 
 	}
-	else {
-		printf("\nFile content %s: \n\n",fileName);
-		while (read(file, &ch, sizeof(char)) != 0) {
-			printf("%c", ch);
-		}
-		close(file);
-		printf("\n\n");
-	}	
-
 }
 
 int copy(const char *fileName) {
 	char fileNameCP[256], buf[4096];
-	int fileOrigin, fileCopy, saved_errno;
+	int fileOrigin, fileCopy, saved_errno, check = isRegularFile(fileName);
 	ssize_t nread;
 
-	strcpy(fileNameCP,fileName);
-	strip_ext(fileNameCP);
+    if(check == 1) {
+		strcpy(fileNameCP,fileName);
+		strip_ext(fileNameCP);
 
-	fileOrigin = open(fileName, O_RDONLY);
-	if (fileOrigin < 0) {
-        printf("Error Number %d\n", errno);
-        perror("Program");
-		return -1;
-	}
+		fileOrigin = open(fileName, O_RDONLY);
+		if (fileOrigin < 0) {
+			printf("Error Number %d\n", errno);
+			perror("Program");
+			return -1;
+		}
 
-	fileCopy = open(strcat(fileNameCP,"_copia.txt"), O_WRONLY | O_CREAT | O_EXCL, 0666);
-	if (fileCopy < 0)
-		goto out_error;
+		fileCopy = open(strcat(fileNameCP,"_copia.txt"), O_WRONLY | O_CREAT | O_EXCL, 0666);
+		if (fileCopy < 0)
+			goto out_error;
 
-	while (nread = read(fileOrigin, buf, sizeof buf), nread > 0) {
-		char *out_ptr = buf;
-		ssize_t nwritten;
+		while (nread = read(fileOrigin, buf, sizeof buf), nread > 0) {
+			char *out_ptr = buf;
+			ssize_t nwritten;
 
-		do {
-			nwritten = write(fileCopy, out_ptr, nread);
+			do {
+				nwritten = write(fileCopy, out_ptr, nread);
 
-			if (nwritten >= 0) {
-				nread -= nwritten;
-				out_ptr += nwritten;
-			}
-			else if (errno != EINTR) {
+				if (nwritten >= 0) {
+					nread -= nwritten;
+					out_ptr += nwritten;
+				}
+				else if (errno != EINTR) {
+					goto out_error;
+				}
+			} while (nread > 0);
+		}
+
+		if (nread == 0) {
+			if (close(fileCopy) < 0) {
+				fileCopy = -1;
 				goto out_error;
 			}
-		} while (nread > 0);
-	}
+			close(fileOrigin);
 
-	if (nread == 0) {
-		if (close(fileCopy) < 0) {
-			fileCopy = -1;
-			goto out_error;
+			return 0;
 		}
+
+		out_error:
+		saved_errno = errno;
+		printf("Error Number %d\n", saved_errno);
+		perror("Program");
+
 		close(fileOrigin);
+		if (fileCopy >= 0)
+			close(fileCopy);
 
-		return 0;
+		errno = saved_errno;
+		return -1;
 	}
-
-	out_error:
-	saved_errno = errno;
-	printf("Error Number %d\n", saved_errno);
-	perror("Program");
-
-	close(fileOrigin);
-	if (fileCopy >= 0)
-		close(fileCopy);
-
-	errno = saved_errno;
-	return -1;
+	else{
+		printf("Error Number %d\n", errno);
+		printf("Argument %s is not a regular file\n", fileName);
+		perror("Program"); 
+		return -1;
+	}
 }
 
 int append(const char *fileNameO,const char *fileNameD) {
 	char buf[4096];
-	int fileOrigin, fileDestiny, saved_errno;
+	int fileOrigin, fileDestiny, saved_errno, checkO = isRegularFile(fileNameO), checkD = isRegularFile(fileNameD);
 	ssize_t nread;
 
-	fileOrigin = open(fileNameO, O_RDONLY);
-	if (fileOrigin < 0) {
-        printf("Error Number %d\n", errno);
-        perror("Program");
-		return -1;
-	}
+    if((checkO == 1) && (checkD == 1)) {
+		fileOrigin = open(fileNameO, O_RDONLY);
+		if (fileOrigin < 0) {
+			printf("Error Number %d\n", errno);
+			perror("Program");
+			return -1;
+		}
 
-	fileDestiny = open(fileNameD, O_RDWR | O_APPEND);
-	write(fileDestiny, "\n", 1);
-	if (fileDestiny < 0)
-		goto out_error;
+		fileDestiny = open(fileNameD, O_RDWR | O_APPEND);
+		write(fileDestiny, "\n", 1);
+		if (fileDestiny < 0)
+			goto out_error;
 
-	while (nread = read(fileOrigin, buf, sizeof buf), nread > 0) {
-		char *out_ptr = buf;
-		ssize_t nwritten;
+		while (nread = read(fileOrigin, buf, sizeof buf), nread > 0) {
+			char *out_ptr = buf;
+			ssize_t nwritten;
 
-		do {
-			nwritten = write(fileDestiny, out_ptr, nread);
+			do {
+				nwritten = write(fileDestiny, out_ptr, nread);
 
-			if (nwritten >= 0) {
-				nread -= nwritten;
-				out_ptr += nwritten;
-			}
-			else if (errno != EINTR) {
+				if (nwritten >= 0) {
+					nread -= nwritten;
+					out_ptr += nwritten;
+				}
+				else if (errno != EINTR) {
+					goto out_error;
+				}
+			} while (nread > 0);
+		}
+
+		if (nread == 0) {
+			if (close(fileDestiny) < 0) {
+				fileDestiny = -1;
 				goto out_error;
 			}
-		} while (nread > 0);
-	}
-
-	if (nread == 0) {
-		if (close(fileDestiny) < 0) {
-			fileDestiny = -1;
-			goto out_error;
+			close(fileOrigin);
+			return 0;
 		}
+
+		out_error:
+		saved_errno = errno;
+		printf("Error Number %d\n", saved_errno);
+		perror("Program");
+
 		close(fileOrigin);
-		return 0;
+		if (fileDestiny >= 0)
+			close(fileDestiny);
+
+		errno = saved_errno;
+		return -1;
 	}
-
-	out_error:
-	saved_errno = errno;
-	printf("Error Number %d\n", saved_errno);
-	perror("Program");
-
-	close(fileOrigin);
-	if (fileDestiny >= 0)
-		close(fileDestiny);
-
-	errno = saved_errno;
-	return -1;
+	else {
+		printf("Error Number %d\n", errno);
+		printf("One/both of the arguments (%s or %s) is/are not a regular file\n", fileNameO, fileNameD);
+		perror("Program"); 
+		return -1;
+	}
 }
 
 void count(const char *fileName) {
 	size_t lines = 1;
 	char c;
-	int i;
+	int check = isRegularFile(fileName);
 
-	int file = open(fileName,O_RDONLY,0);
-	if (file < 0) {
-        printf("Error Number %d\n", errno);
-        perror("Program");
-	}
-	else {
-		while (read(file, &c, 1) == 1) {
-			if (c == '\n') {
-				lines++;
-			}
+	if(check == 1) {
+		int file = open(fileName,O_RDONLY,0);
+		if (file < 0) {
+			printf("Error Number %d\n", errno);
+			perror("Program");
 		}
-
-		printf("Linecount: %zu\n", lines);
+		else {
+			while (read(file, &c, 1) == 1) {
+				if (c == '\n') {
+					lines++;
+				}
+			}
+			printf("Linecount: %zu\n", lines);
+		}
+	}
+	else{
+		printf("Error Number %d\n", errno);
+		printf("Argument %s is not a regular file\n", fileName);
+		perror("Program");
 	}
 }
 
 void delete(const char *fileName) {
 	struct stat sb;
-    int fd;
+    int check;
 
 	if (!stat(fileName, &sb)) {
-		if (S_ISDIR(sb.st_mode)){
-			printf("Directory %s was removed with success\n", fileName);
-			rmdir(fileName);
+		if (S_ISDIR(sb.st_mode)){	
+			check = isDirectoryEmpty(fileName);
+			if(check == 1) {
+				printf("Directory %s was removed with success\n", fileName);
+				rmdir(fileName);
+			}
+			else 
+				printf("Directory %s was not removed because it wasn't empty\n", fileName);
 		}
 		else {
 			printf("File %s was removed with success\n", fileName);
